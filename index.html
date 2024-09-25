@@ -7,20 +7,39 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Leaf Clicker</h1>
-    <img id="clickLeaf" src="leaf.png" alt="Leaf" id="leaf">
-    <div id="score">Score: 0</div>
-    <div id="achievementMessage"></div>
-    <div id="upgradeMessage"></div>
-    
-    <div id="upgradeBox">
-        <h3>Upgrades</h3>
-        <button id="autoClickerButton" style="display: none;">Auto Clicker (Cost: 10 Points)</button>
-        <button id="multiplierButton" style="display: none;">Leaf Multiplier (Cost: 20 Points)</button>
-        <button id="workersButton" style="display: none;">Workers (Cost: 50 Points)</button>
-        <button id="speedButton" style="display: none;">Faster Auto Clickers (Cost: 100 Points)</button>
+    <div class="container">
+        <h1>Leaf Clicker Game</h1>
+        <div id="score">Score: 0</div>
+        <img id="clicker-image" src="leaf.png" alt="Click the Leaf">
+        <div id="upgrades">
+            <h2>Upgrades</h2>
+            <div>
+                <button id="worker-button">Buy Worker (Cost: 50)</button>
+                <span id="worker-status">Worker: Off</span>
+            </div>
+            <div>
+                <button id="more-workers-button">Buy More Workers (Cost: 100)</button>
+                <span id="more-workers-status">Purchased: 0 times</span>
+            </div>
+            <div>
+                <button id="factory-button">Buy Factory (Cost: 200)</button>
+                <span id="factory-status">Purchased: 0 times</span>
+            </div>
+            <div>
+                <button id="leaf-trimmers-button">Buy Leaf Trimmers (Cost: 150)</button>
+                <span id="leaf-trimmers-status">Purchased: 0 times</span>
+            </div>
+            <div>
+                <button id="leaf-harvesters-button">Buy Leaf Harvesters (Cost: 400)</button>
+                <span id="leaf-harvesters-status">Purchased: 0 times</span>
+            </div>
+            <div>
+                <button id="super-factory-button">Buy Super Factory (Cost: 500)</button>
+                <span id="super-factory-status">Purchased: 0 times</span>
+            </div>
+        </div>
+        <div id="score-popup" class="popup"></div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>

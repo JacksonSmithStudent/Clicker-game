@@ -1,222 +1,232 @@
 let score = 0;
-let autoClickerCost = 10;
-let multiplierCost = 20;
-let workersCost = 50;
-let speedUpgradeCost = 100; // Cost for the speed upgrade
-let autoClickerActive = false;
-let pointsPerClick = 1;
-let autoClickers = 0;
-let workers = 0;
-let hasClickedOnce = false;
-let autoClickInterval = 1000; // Base interval for auto clickers
+let workerActive = false;
+let workerCost = 50;
+let workerInterval = null;
+let workerPurchased = false;
+let moreWorkersPurchased = 0;
+let moreWorkersCost = 100;
+let factoryPurchased = 0;
+let factoryCost = 200;
+let leafTrimmersPurchased = 0;
+let leafTrimmersCost = 150; // Initial cost for Leaf Trimmers upgrade
+let leafPointsPerClick = 1;
+let factoryInterval = null;
+let leafHarvestersPurchased = 0;
+let leafHarvestersCost = 400; // Initial cost for Leaf Harvesters upgrade
+let superFactoryPurchased = 0;
+let superFactoryCost = 500; // Initial cost for Super Factory upgrade
+let factoryPointsPerSecond = 5;
+let superFactoryPointsPerSecond = 10;
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadGame();
+// Function to update the score displayed on the page
+function updateScore() {
+    document.getElementById('score').innerText = 'Score: ' + score;
+    localStorage.setItem('leafClickerScore', score);
+    saveUpgrades();
+}
 
-    document.getElementById('clickLeaf').addEventListener('click', function() {
-        this.classList.add('shake');
-        setTimeout(() => {
-            this.classList.remove('shake');
-        }, 300);
+// Function to save the upgrade states to local storage
+function saveUpgrades() {
+    const upgradesState = {
+        workerPurchased,
+        moreWorkersPurchased,
+        moreWorkersCost,
+        factoryPurchased,
+        factoryCost,
+        leafTrimmersPurchased,
+        leafTrimmersCost,
+        leafHarvestersPurchased,
+        leafHarvestersCost,
+        superFactoryPurchased,
+        superFactoryCost
+    };
+    localStorage.setItem('leafClickerUpgrades', JSON.stringify(upgradesState));
+}
 
-        score += pointsPerClick;
-        document.getElementById('score').innerText = 'Score: ' + score;
-        showPopUp(event.clientX, event.clientY, pointsPerClick);
-        updateUpgradeButtons();
+// Load saved game state
+window.onload = function() {
+    const savedScore = localStorage.getItem('leafClickerScore');
+    const savedUpgrades = localStorage.getItem('leafClickerUpgrades');
 
-        if (!hasClickedOnce) {
-            hasClickedOnce = true;
-            document.getElementById('achievementMessage').innerText = 'You have one Leaf!';
-        }
-        
-        saveGame();
-    });
+    if (savedScore) {
+        score = parseInt(savedScore);
+        updateScore();
+    }
 
-    document.getElementById('autoClickerButton').addEventListener('click', function() {
-        this.classList.add('pop');
-        setTimeout(() => {
-            this.classList.remove('pop');
-        }, 200); 
+    if (savedUpgrades) {
+        const upgradesState = JSON.parse(savedUpgrades);
+        workerPurchased = upgradesState.workerPurchased;
+        moreWorkersPurchased = upgradesState.moreWorkersPurchased;
+        moreWorkersCost = upgradesState.moreWorkersCost;
+        factoryPurchased = upgradesState.factoryPurchased;
+        factoryCost = upgradesState.factoryCost;
+        leafTrimmersPurchased = upgradesState.leafTrimmersPurchased;
+        leafTrimmersCost = upgradesState.leafTrimmersCost;
+        leafHarvestersPurchased = upgradesState.leafHarvestersPurchased;
+        leafHarvestersCost = upgradesState.leafHarvestersCost;
+        superFactoryPurchased = upgradesState.superFactoryPurchased;
+        superFactoryCost = upgradesState.superFactoryCost;
 
-        if (score >= autoClickerCost) {
-            score -= autoClickerCost;
-            autoClickerActive = true;
-            autoClickers++;
-            document.getElementById('score').innerText = 'Score: ' + score;
-            document.getElementById('upgradeMessage').innerText = 'Auto Clicker Purchased! You now have ' + autoClickers + ' auto clicker(s).';
-            startAutoClick();
-            increaseAutoClickerCost();
-        } else {
-            document.getElementById('upgradeMessage').innerText = 'Not enough points!';
-        }
-        
-        saveGame();
-    });
+        // Restore UI states based on saved upgrades
+        updateUpgradeUI();
+    }
+};
 
-    document.getElementById('multiplierButton').addEventListener('click', function() {
-        this.classList.add('pop');
-        setTimeout(() => {
-            this.classList.remove('pop');
-        }, 200); 
+// Function to update the UI for upgrades
+function updateUpgradeUI() {
+    if (workerPurchased) {
+        document.getElementById('worker-status').innerText = "Worker: On";
+        document.getElementById('worker-button').style.display = 'none';
+        activateWorker();
+    }
+    if (moreWorkersPurchased > 0) {
+        document.getElementById('more-workers-status').innerText = "Purchased: " + moreWorkersPurchased + " times";
+        document.getElementById('more-workers-button').innerText = "Buy More Workers (Cost: " + moreWorkersCost + ")";
+    }
+    if (factoryPurchased > 0) {
+        document.getElementById('factory-status').innerText = "Purchased: " + factoryPurchased + " times";
+        document.getElementById('factory-button').innerText = "Buy Factory (Cost: " + factoryCost + ")";
+        activateFactory();
+    }
+    if (leafTrimmersPurchased > 0) {
+        document.getElementById('leaf-trimmers-status').innerText = "Purchased: " + leafTrimmersPurchased + " times";
+        document.getElementById('leaf-trimmers-button').innerText = "Buy Leaf Trimmers (Cost: " + leafTrimmersCost + ")";
+    }
+    if (leafHarvestersPurchased > 0) {
+        document.getElementById('leaf-harvesters-status').innerText = "Purchased: " + leafHarvestersPurchased + " times";
+        document.getElementById('leaf-harvesters-button').innerText = "Buy Leaf Harvesters (Cost: " + leafHarvestersCost + ")";
+    }
+    if (superFactoryPurchased > 0) {
+        document.getElementById('super-factory-status').innerText = "Purchased: " + superFactoryPurchased + " times";
+        document.getElementById('super-factory-button').innerText = "Buy Super Factory (Cost: " + superFactoryCost + ")";
+        activateSuperFactory();
+    }
+}
 
-        if (score >= multiplierCost) {
-            score -= multiplierCost;
-            pointsPerClick += 1;
-            document.getElementById('score').innerText = 'Score: ' + score;
-            document.getElementById('upgradeMessage').innerText = 'Leaf Multiplier Purchased! Points per click: ' + pointsPerClick;
-            increaseMultiplierCost();
-        } else {
-            document.getElementById('upgradeMessage').innerText = 'Not enough points!';
-        }
-        
-        saveGame();
-    });
+// Leaf click event listener
+document.getElementById('clicker-image').addEventListener('click', function() {
+    score += leafPointsPerClick;
+    updateScore();
+    this.classList.add('shake');
 
-    document.getElementById('workersButton').addEventListener('click', function() {
-        this.classList.add('pop');
-        setTimeout(() => {
-            this.classList.remove('pop');
-        }, 200); 
-
-        if (score >= workersCost) {
-            score -= workersCost;
-            workers++;
-            document.getElementById('score').innerText = 'Score: ' + score;
-            document.getElementById('upgradeMessage').innerText = 'Worker Purchased! You now have ' + workers + ' worker(s).';
-            increaseWorkersCost();
-        } else {
-            document.getElementById('upgradeMessage').innerText = 'Not enough points!';
-        }
-        
-        saveGame();
-    });
-
-    document.getElementById('speedButton').addEventListener('click', function() {
-        this.classList.add('pop');
-        setTimeout(() => {
-            this.classList.remove('pop');
-        }, 200);
-
-        if (score >= speedUpgradeCost) {
-            score -= speedUpgradeCost;
-            autoClickInterval = Math.max(500, autoClickInterval - 200); // Reduce interval, minimum 500ms
-            document.getElementById('score').innerText = 'Score: ' + score;
-            document.getElementById('upgradeMessage').innerText = 'Faster Auto Clickers Purchased! Current interval: ' + (autoClickInterval / 1000) + ' seconds.';
-            increaseSpeedUpgradeCost();
-            clearInterval(); // Clear the previous interval
-            startAutoClick(); // Restart auto clickers with the new interval
-        } else {
-            document.getElementById('upgradeMessage').innerText = 'Not enough points!';
-        }
-        
-        saveGame();
-    });
+    setTimeout(() => {
+        this.classList.remove('shake');
+    }, 500);
 });
 
-function startAutoClick() {
-    setInterval(() => {
-        if (autoClickerActive) {
-            score += autoClickers;
-            score += workers * 4;
-            document.getElementById('score').innerText = 'Score: ' + score;
-            showPopUp(event.clientX, event.clientY, autoClickers + (workers * 4)); 
-            saveGame();
-        }
-    }, autoClickInterval);
+// Function to activate worker
+function activateWorker() {
+    workerActive = true;
+    const workerSpeed = 1000 - (moreWorkersPurchased * 200);
+    workerInterval = setInterval(() => {
+        score++;
+        updateScore();
+    }, workerSpeed);
 }
 
-function increaseAutoClickerCost() {
-    autoClickerCost = Math.floor(autoClickerCost * 1.5);
-    document.getElementById('autoClickerButton').innerText = `Auto Clicker (Cost: ${autoClickerCost} Points)`;
-}
-
-function increaseMultiplierCost() {
-    multiplierCost = Math.floor(multiplierCost * 1.5);
-    document.getElementById('multiplierButton').innerText = `Leaf Multiplier (Cost: ${multiplierCost} Points)`;
-}
-
-function increaseWorkersCost() {
-    workersCost = Math.floor(workersCost * 1.5);
-    document.getElementById('workersButton').innerText = `Workers (Cost: ${workersCost} Points)`;
-}
-
-function increaseSpeedUpgradeCost() {
-    speedUpgradeCost = Math.floor(speedUpgradeCost * 1.5);
-    document.getElementById('speedButton').innerText = `Faster Auto Clickers (Cost: ${speedUpgradeCost} Points)`;
-}
-
-function updateUpgradeButtons() {
-    if (score >= autoClickerCost || autoClickerCost === 10) {
-        document.getElementById('autoClickerButton').style.display = 'block';
+// Buy Worker
+document.getElementById('worker-button').addEventListener('click', function() {
+    if (score >= workerCost && !workerPurchased) {
+        score -= workerCost;
+        workerPurchased = true;
+        document.getElementById('worker-status').innerText = "Worker: On";
+        this.style.display = 'none';
+        activateWorker();
+        updateScore();
     }
+});
 
-    if (score >= multiplierCost || multiplierCost === 20) {
-        document.getElementById('multiplierButton').style.display = 'block';
+// Buy More Workers
+document.getElementById('more-workers-button').addEventListener('click', function() {
+    if (score >= moreWorkersCost) {
+        score -= moreWorkersCost;
+        moreWorkersPurchased++;
+        moreWorkersCost = Math.floor(moreWorkersCost * 1.5); // Increase cost
+        adjustWorkerSpeed(); // Adjust worker speed
+        updateScore();
+        document.getElementById('more-workers-status').innerText = "Purchased: " + moreWorkersPurchased + " times";
+        this.innerText = "Buy More Workers (Cost: " + moreWorkersCost + ")"; // Update button text
     }
+});
 
-    if (score >= workersCost || workersCost === 50) {
-        document.getElementById('workersButton').style.display = 'block';
-    }
-
-    if (score >= speedUpgradeCost || speedUpgradeCost === 100) {
-        document.getElementById('speedButton').style.display = 'block';
+// Adjust worker speed
+function adjustWorkerSpeed() {
+    if (workerActive && workerInterval) {
+        clearInterval(workerInterval);
+        const workerSpeed = 1000 - (moreWorkersPurchased * 200);
+        workerInterval = setInterval(() => {
+            score++;
+            updateScore();
+        }, workerSpeed);
     }
 }
 
-function showPopUp(x, y, points) {
-    const popUp = document.createElement('div');
-    popUp.className = 'pop-up';
-    popUp.innerText = `+${points}`;
-    popUp.style.left = `${x}px`;
-    popUp.style.top = `${y - 30}px`; 
-    document.body.appendChild(popUp);
-    setTimeout(() => {
-        popUp.style.transform = 'translateY(-20px)';
-        popUp.style.opacity = '0';
-    }, 10);
-    setTimeout(() => {
-        document.body.removeChild(popUp);
-    }, 510);
+// Buy Factory
+document.getElementById('factory-button').addEventListener('click', function() {
+    if (score >= factoryCost) {
+        score -= factoryCost;
+        factoryPurchased++;
+        factoryCost = Math.floor(factoryCost * 1.5); // Increase cost
+        updateScore();
+        document.getElementById('factory-status').innerText = "Purchased: " + factoryPurchased + " times";
+        this.innerText = "Buy Factory (Cost: " + factoryCost + ")"; // Update button text
+        activateFactory(); // Activate factory if not already activated
+    }
+});
+
+// Function to activate the factory
+function activateFactory() {
+    if (!factoryInterval) { // Check if factory is already activated
+        factoryInterval = setInterval(() => {
+            score += 5; // Add factory points
+            updateScore();
+        }, 1000); // Run every second
+    }
 }
 
-// Save the game state to localStorage
-function saveGame() {
-    const gameState = {
-        score,
-        autoClickerCost,
-        multiplierCost,
-        workersCost,
-        speedUpgradeCost, // Add speed upgrade cost
-        pointsPerClick,
-        autoClickers,
-        workers,
-        hasClickedOnce,
-        autoClickInterval // Save the interval
-    };
-    localStorage.setItem('leafClickerGame', JSON.stringify(gameState));
-}
+// Buy Leaf Trimmers
+document.getElementById('leaf-trimmers-button').addEventListener('click', function() {
+    if (score >= leafTrimmersCost) {
+        score -= leafTrimmersCost;
+        leafTrimmersPurchased++;
+        leafTrimmersCost = Math.floor(leafTrimmersCost * 1.5); // Increase cost
+        updateScore();
+        document.getElementById('leaf-trimmers-status').innerText = "Purchased: " + leafTrimmersPurchased + " times";
+        this.innerText = "Buy Leaf Trimmers (Cost: " + leafTrimmersCost + ")"; // Update button text
+    }
+});
 
-// Load the game state from localStorage
-function loadGame() {
-    const savedGame = localStorage.getItem('leafClickerGame');
-    if (savedGame) {
-        const gameState = JSON.parse(savedGame);
-        score = gameState.score;
-        autoClickerCost = gameState.autoClickerCost;
-        multiplierCost = gameState.multiplierCost;
-        workersCost = gameState.workersCost;
-        speedUpgradeCost = gameState.speedUpgradeCost; // Load speed upgrade cost
-        pointsPerClick = gameState.pointsPerClick;
-        autoClickers = gameState.autoClickers;
-        workers = gameState.workers;
-        hasClickedOnce = gameState.hasClickedOnce;
-        autoClickInterval = gameState.autoClickInterval; // Load interval
+// Buy Leaf Harvesters
+document.getElementById('leaf-harvesters-button').addEventListener('click', function() {
+    if (score >= leafHarvestersCost) {
+        score -= leafHarvestersCost;
+        leafHarvestersPurchased++;
+        leafHarvestersCost = Math.floor(leafHarvestersCost * 1.5); // Increase cost
+        updateScore();
+        document.getElementById('leaf-harvesters-status').innerText = "Purchased: " + leafHarvestersPurchased + " times";
+        this.innerText = "Buy Leaf Harvesters (Cost: " + leafHarvestersCost + ")"; // Update button text
+    }
+});
 
-        document.getElementById('score').innerText = 'Score: ' + score;
-        document.getElementById('autoClickerButton').innerText = `Auto Clicker (Cost: ${autoClickerCost} Points)`;
-        document.getElementById('multiplierButton').innerText = `Leaf Multiplier (Cost: ${multiplierCost} Points)`;
-        document.getElementById('workersButton').innerText = `Workers (Cost: ${workersCost} Points)`;
-        document.getElementById('speedButton').innerText = `Faster Auto Clickers (Cost: ${speedUpgradeCost} Points)`; // Set button text
-        updateUpgradeButtons(); 
+// Buy Super Factory
+document.getElementById('super-factory-button').addEventListener('click', function() {
+    if (score >= superFactoryCost) {
+        score -= superFactoryCost;
+        superFactoryPurchased++;
+        superFactoryCost = Math.floor(superFactoryCost * 1.5); // Increase cost
+        updateScore();
+        document.getElementById('super-factory-status').innerText = "Purchased: " + superFactoryPurchased + " times";
+        this.innerText = "Buy Super Factory (Cost: " + superFactoryCost + ")"; // Update button text
+        activateSuperFactory(); // Activate super factory
+    }
+});
+
+// Function to activate Super Factory
+function activateSuperFactory() {
+    if (!factoryInterval) { // Check if super factory is already activated
+        factoryInterval = setInterval(() => {
+            score += superFactoryPointsPerSecond; // Add super factory points
+            updateScore();
+        }, 1000); // Run every second
     }
 }
